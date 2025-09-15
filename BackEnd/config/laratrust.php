@@ -45,7 +45,7 @@ return [
         | Defines if you want to use the roles and permissions checker.
         | Available:
         | - default: Check for the roles and permissions using the method that Laratrust
-                     has always used.
+        |            has always used.
         | - query: Check for the roles and permissions using direct queries to the database.
         |          This method doesn't support cache yet.
         | - class that extends Laratrust\Checkers\Role\RoleChecker
