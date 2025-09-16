@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\User;
+
 
 class DatabaseSeeder extends Seeder
 {
@@ -12,6 +14,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call(LaratrustSeeder::class);
         // \App\Models\User::factory(10)->create();
 
         // \App\Models\User::factory()->create([
@@ -19,6 +22,13 @@ class DatabaseSeeder extends Seeder
         //     'email' => 'test@example.com',
         // ]);
 
-        $this->call(LaratrustSeeder::class);
+        $user = User::factory()->create([
+            'name' => 'admin',
+            'email' => 'admin@example.com',
+            'password' => bcrypt('123456789'),
+        ]);
+        $user->addRole('admin');
+
+
     }
 }
