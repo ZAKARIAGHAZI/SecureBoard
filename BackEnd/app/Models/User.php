@@ -43,4 +43,14 @@ class User extends Authenticatable implements LaratrustUser
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function projects()
+    {
+        return $this->hasMany(Project::class);
+    }
+
+    public function assignedProjects()
+    {
+        return $this->belongsToMany(Project::class);
+    }
 }
