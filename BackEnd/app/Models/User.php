@@ -53,4 +53,9 @@ class User extends Authenticatable implements LaratrustUser
     {
         return $this->belongsToMany(Project::class);
     }
+
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
+    }
 }
