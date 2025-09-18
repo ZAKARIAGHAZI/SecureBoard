@@ -26,7 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 
-
+/*
 Route::middleware('web')->group(function () {
 
     // CSRF cookie endpoint
@@ -47,3 +47,4 @@ Route::middleware('web')->group(function () {
     });
 });
 
+*/

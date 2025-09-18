@@ -39,9 +39,16 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
+        $token = $user->createToken('api_token')->plainTextToken;
         return response()->json([
             'message' => 'User registered successfully.',
-            'user' => $user
+            'user' => $user,
+            'token' => $token
         ], 201);
+
+
+        // zakaria token 1|ETo8PbrU8P4CYPKYZw8qGrayUuaJpjCR7b4360mm11d6b1d1
+
+        // login token 2|FjTvpEgRPPkhstJPlCyFYn0yanyj965m4zmJEeSs4df64e20
     }
 }

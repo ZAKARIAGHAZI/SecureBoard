@@ -67,6 +67,6 @@ class ProjectController extends Controller
     {
         $this->authorize('delete', $project);
         $project->delete();
-        return response()->noContent();
+        return response()->json(['message' => 'Projet supprimé avec succès.'], 200);
     }
 }
