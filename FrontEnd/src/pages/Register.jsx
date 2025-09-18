@@ -1,5 +1,7 @@
 import { useState } from "react";
 import BackgroundCanvas from "../components/BackgroundCanvas.jsx";
+import Cookies from "js-cookie";
+import axios from "axios";
 
 // Simuler API pour test
 const api = {
@@ -25,17 +27,30 @@ export default function Register({ onRegister, switchToLogin }) {
       setError("Les mots de passe ne correspondent pas !");
       return;
     }
+    const csrf = async () => {
+    try {
+        return await axios.get('/sanctum/csrf-cookie');
+    } catch (error) {
+        console.log('Error while getting the csrf token : ', error);
+
+    }
+}
+
 
     try {
-      const response = await api.post("/register", { name, email, password, password_confirmation: passwordConfirmation });
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("role", response.data.user.roles[0].name);
+       await csrf();
+            let token = Cookies.get('XSRF-TOKEN');
+      const response = await axios.post("http://127.0.0.1:8000/api/register", { name, email, password, password_confirmation: passwordConfirmation },{ headers: {
+          'X-XSRF-TOKEN': token,
+        }});
+     // localStorage.setItem("token", response.data.token);
+      //localStorage.setItem("role", response.data.user.roles[0].name);
       setSuccess("Inscription réussie !");
-      setError("");
       onRegister();
+      
     } catch (err) {
-      setError("Erreur lors de l'inscription");
-      setSuccess("");
+      console.log(err);
+
     }
   };
 

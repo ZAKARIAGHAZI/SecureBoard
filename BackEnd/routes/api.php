@@ -19,12 +19,10 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 */
 
 
-
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('projects', ProjectController::class);
     Route::apiResource('tasks', TaskController::class);
 });
-
 
 
 Route::middleware('web')->group(function () {
@@ -37,6 +35,7 @@ Route::middleware('web')->group(function () {
     // Guest routes
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
     Route::post('/register', [RegisteredUserController::class, 'store']);
+    
 
     // Authenticated routes
     Route::middleware('auth:sanctum')->group(function () {
