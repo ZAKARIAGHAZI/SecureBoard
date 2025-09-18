@@ -24,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('tasks', TaskController::class);
 });
 
+/*
 
 Route::middleware('web')->group(function () {
 
@@ -46,3 +47,4 @@ Route::middleware('web')->group(function () {
     });
 });
 
+*/
