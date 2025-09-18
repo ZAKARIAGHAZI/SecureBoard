@@ -2,6 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
@@ -17,9 +19,11 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 */
 
 
-    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
-    Route::post('/register', [RegisteredUserController::class, 'store']);
-    
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('projects', ProjectController::class);
+    Route::apiResource('tasks', TaskController::class);
+});
+
 
 Route::middleware('web')->group(function () {
 
@@ -29,7 +33,9 @@ Route::middleware('web')->group(function () {
     });
 
     // Guest routes
-
+    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+    Route::post('/register', [RegisteredUserController::class, 'store']);
+    
 
     // Authenticated routes
     Route::middleware('auth:sanctum')->group(function () {
