@@ -1,35 +1,34 @@
 import { useState } from "react";
+import api from "../api.jsx"; // notre axios centralisé
 import BackgroundCanvas from "../components/BackgroundCanvas.jsx";
-import Register from "./Register.jsx";
-
-// Simuler API pour test
-const api = {
-  post: async (url, data) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (data.email === "admin@example.com" && data.password === "password123") {
-          resolve({ data: { token: "fake-token", user: { roles: [{ name: "admin" }] } } });
-        } else {
-          reject("Invalid credentials");
-        }
-      }, 500);
-    });
-  }
-};
 
 export default function Login({ onLogin, switchToRegister }) {
-  const [email, setEmail] = useState("admin@example.com");
-  const [password, setPassword] = useState("password123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const handleSubmit = async () => {
+    setError("");
     try {
       const response = await api.post("/login", { email, password });
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("role", response.data.user.roles[0].name);
+
+      // Stocker token et user dans localStorage
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+      }
+      if (response.data.user) {
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+      }
+
+      // Appeler la fonction de login dans App.jsx pour rediriger vers Dashboard
       onLogin();
     } catch (err) {
-      setError("Email ou mot de passe incorrect !");
+      console.error(err);
+      if (err.response?.status === 422 || err.response?.status === 401) {
+        setError("Email ou mot de passe incorrect !");
+      } else {
+        setError("Une erreur est survenue, réessayez plus tard.");
+      }
     }
   };
 
@@ -51,9 +50,9 @@ export default function Login({ onLogin, switchToRegister }) {
           boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
           backgroundColor: "#476eb3"
         }}>
-          <h2 style={{ textAlign: "center", marginBottom: 20, color: "#333" }}>Connexion</h2>
+          <h2 style={{ textAlign: "center", marginBottom: 20, color: "#fff" }}>Connexion</h2>
 
-          <label style={{ fontWeight: "bold" }}>Email</label>
+          <label style={{ fontWeight: "bold", color: "#fff" }}>Email</label>
           <input
             type="email"
             value={email}
@@ -61,7 +60,7 @@ export default function Login({ onLogin, switchToRegister }) {
             style={{ width: "100%", padding: 10, marginBottom: 15, borderRadius: 5, border: "1px solid #ccc" }}
           />
 
-          <label style={{ fontWeight: "bold" }}>Mot de passe</label>
+          <label style={{ fontWeight: "bold", color: "#fff" }}>Mot de passe</label>
           <input
             type="password"
             value={password}
@@ -69,16 +68,26 @@ export default function Login({ onLogin, switchToRegister }) {
             style={{ width: "100%", padding: 10, marginBottom: 15, borderRadius: 5, border: "1px solid #ccc" }}
           />
 
-          {error && <p style={{ color: "red", textAlign: "center",fontWeight: "bold" }}>{error}</p>}
+          {error && <p style={{ color: "red", textAlign: "center", fontWeight: "bold" }}>{error}</p>}
 
           <button
             onClick={handleSubmit}
-            style={{ width: "100%", padding: 12, marginTop: 10, borderRadius: 5, border: "none", backgroundColor: "#2575fc", color: "#fff", fontWeight: "bold", cursor: "pointer" }}
+            style={{
+              width: "100%",
+              padding: 12,
+              marginTop: 10,
+              borderRadius: 5,
+              border: "none",
+              backgroundColor: "#2575fc",
+              color: "#fff",
+              fontWeight: "bold",
+              cursor: "pointer"
+            }}
           >
             Se connecter
           </button>
 
-          <p style={{ textAlign: "center", marginTop: 15 }}>
+          <p style={{ textAlign: "center", marginTop: 15, color: "#fff" }}>
             Pas de compte ?{" "}
             <span style={{ color: "#ff7eb3", cursor: "pointer", fontWeight: "bold" }} onClick={switchToRegister}>
               S'inscrire

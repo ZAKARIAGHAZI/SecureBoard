@@ -17,7 +17,9 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 */
 
 
-
+    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+    Route::post('/register', [RegisteredUserController::class, 'store']);
+    
 
 Route::middleware('web')->group(function () {
 
@@ -27,8 +29,7 @@ Route::middleware('web')->group(function () {
     });
 
     // Guest routes
-    Route::post('/login', [AuthenticatedSessionController::class, 'store']);
-    Route::post('/register', [RegisteredUserController::class, 'store']);
+
 
     // Authenticated routes
     Route::middleware('auth:sanctum')->group(function () {
