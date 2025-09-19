@@ -11,6 +11,7 @@ export default function Login({ onLogin, switchToRegister }) {
     setError("");
     try {
       const response = await api.post("/login", { email, password });
+      console.log("Login response:", response.data);
 
       // Stocker token et user dans localStorage
       if (response.data.token) {
