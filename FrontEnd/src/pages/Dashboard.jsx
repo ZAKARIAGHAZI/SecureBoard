@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Users from "./Users";
 import api from "../api"; // ton axios configuré avec baseURL
 import Projects from "./Projects";
+import Tasks from "./Tasks";
 
 export default function Dashboard({ onLogout }) {
   const [activePage, setActivePage] = useState("home"); // home, users, projects
@@ -13,7 +14,7 @@ export default function Dashboard({ onLogout }) {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const res = await api.get("/user", {
+        const res = await api.get("/users", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUser(res.data);
@@ -26,7 +27,13 @@ export default function Dashboard({ onLogout }) {
   }, [onLogout]);
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "Arial, sans-serif" }}>
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
       {/* Sidebar */}
       <aside
         style={{
@@ -76,9 +83,30 @@ export default function Dashboard({ onLogout }) {
         )}
 
         {/* Navigation */}
-        <button onClick={() => setActivePage("home")} style={sidebarButtonStyle(activePage === "home")}>🏠 Dashboard</button>
-        <button onClick={() => setActivePage("users")} style={sidebarButtonStyle(activePage === "users")}>👥 Users</button>
-        <button onClick={() => setActivePage("projects")} style={sidebarButtonStyle(activePage === "projects")}>📊 Projects</button>
+        <button
+          onClick={() => setActivePage("home")}
+          style={sidebarButtonStyle(activePage === "home")}
+        >
+          🏠 Dashboard
+        </button>
+        <button
+          onClick={() => setActivePage("users")}
+          style={sidebarButtonStyle(activePage === "users")}
+        >
+          👥 Users
+        </button>
+        <button
+          onClick={() => setActivePage("projects")}
+          style={sidebarButtonStyle(activePage === "projects")}
+        >
+          📊 Projects
+        </button>
+        <button
+          onClick={() => setActivePage("tasks")}
+          style={sidebarButtonStyle(activePage === "tasks")}
+        >
+          📝 Tasks
+        </button>
 
         {/* Déconnexion */}
         <div style={{ marginTop: "auto" }}>
@@ -98,13 +126,13 @@ export default function Dashboard({ onLogout }) {
       {/* Main content - prend toute la largeur restante */}
       <main
         style={{
-          flex: 2,               // ← prend tout l'espace restant
+          flex: 2, // ← prend tout l'espace restant
           padding: "40px",
           background: "linear-gradient(135deg, #4e54c8, #8f94fb)",
           color: "#fff",
           display: "flex",
           flexDirection: "column",
-          width: "940px",         // ← important pour s'étendre
+          width: "940px", // ← important pour s'étendre
         }}
       >
         {activePage === "home" && <h1>Bienvenue {user ? user.name : ""} 👋</h1>}
@@ -121,6 +149,14 @@ export default function Dashboard({ onLogout }) {
             <h1>📊 Gestion des projets</h1>
             <p>Liste et gestion des projets ici.</p>
             <Projects />
+          </div>
+        )}
+
+        {activePage === "tasks" && (
+          <div style={{ flex: 1, width: "100%" }}>
+            <h1>📝 Gestion des tâches</h1>
+            <p></p>
+            <Tasks />
           </div>
         )}
       </main>
