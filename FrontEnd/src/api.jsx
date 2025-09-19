@@ -2,11 +2,9 @@ import axios from "axios";
 
 // 🔧 Configurer Axios
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000/api", // 👉 adapte si ton backend tourne ailleurs
-  headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  },
+  baseURL: "http://127.0.0.1:8000/api",
+
+  
 });
 
 // 🎯 Ajouter le token automatiquement s'il existe
