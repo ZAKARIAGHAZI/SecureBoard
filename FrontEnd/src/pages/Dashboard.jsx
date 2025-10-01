@@ -2,7 +2,11 @@ import React, { useState, useEffect } from "react";
 import Users from "./Users";
 import api from "../api"; // ton axios configuré avec baseURL
 import Projects from "./Projects";
+
+import Logout from "../components/Logout";
+import api from "../api";
 import Tasks from "./Tasks";
+
 
 export default function Dashboard({ onLogout }) {
   const [activePage, setActivePage] = useState("home"); // home, users, projects
@@ -14,7 +18,7 @@ export default function Dashboard({ onLogout }) {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const res = await api.get("/users", {
+        const res = await api.get("/user", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUser(res.data);
