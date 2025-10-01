@@ -3,6 +3,7 @@ import Users from "./Users";
 import Projects from "./Projects";
 import Logout from "../components/Logout";
 import api from "../api";
+import Tasks from "./Tasks";
 
 
 export default function Dashboard({ onLogout }) {
@@ -17,7 +18,7 @@ export default function Dashboard({ onLogout }) {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const res = await api.get("/users", {
+        const res = await api.get("/user", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUser(res.data);

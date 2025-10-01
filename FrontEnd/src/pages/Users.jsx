@@ -32,20 +32,20 @@ export default function Users() {
   const handleAddOrUpdateUser = async (e) => {
     e.preventDefault();
     try {
+      const payload = { name, email, role };
+      if (!editUser || password) {
+        payload.password = password;
+      }
+
       if (editUser) {
-        const res = await api.put(`/user/${editUser.id}`, {
-          name,
-          email,
-          password,
-          role,
-        });
+        const res = await api.put(`/user/${editUser.id}`, payload);
         setUsers(users.map((u) => (u.id === editUser.id ? res.data : u)));
       } else {
-        const res = await api.post("/user", { name, email, password, role });
+        const res = await api.post("/user", payload);
         setUsers([...users, res.data]);
       }
 
-      // Reset
+      // Reset form
       setShowForm(false);
       setEditUser(null);
       setName("");
@@ -53,9 +53,13 @@ export default function Users() {
       setPassword("");
       setRole("");
     } catch (err) {
-      console.error("Erreur ajout/modification user", err);
+      console.error(
+        "Erreur ajout/modification user",
+        err.response?.data || err
+      );
     }
   };
+
 
   const handleDeleteUser = async (id) => {
     if (!window.confirm("⚠️ Voulez-vous vraiment supprimer cet utilisateur ?")) return;
