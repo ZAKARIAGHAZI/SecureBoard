@@ -25,8 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('tasks', TaskController::class);
     Route::apiResource('user', UserController::class);
     
-    
-});
+   
 
 
 
@@ -42,7 +41,7 @@ Route::middleware('web')->group(function () {
     // Guest routes
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
     Route::post('/register', [RegisteredUserController::class, 'store']);
-    
+
 
     // Authenticated routes
     Route::middleware('auth:sanctum')->group(function () {
