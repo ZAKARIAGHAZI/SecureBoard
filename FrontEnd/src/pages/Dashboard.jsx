@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
 import Users from "./Users";
-import api from "../api"; // ton axios configuré avec baseURL
 import Projects from "./Projects";
-import Tasks from "./Tasks";
+import Logout from "../components/Logout";
+import api from "../api";
+
 
 export default function Dashboard({ onLogout }) {
-  const [activePage, setActivePage] = useState("home"); // home, users, projects
+  const [activePage, setActivePage] = useState("home");
   const [user, setUser] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // Récupération utilisateur connecté
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -20,7 +23,7 @@ export default function Dashboard({ onLogout }) {
         setUser(res.data);
       } catch (err) {
         console.error("❌ Erreur récupération user:", err);
-        onLogout(); // si token invalide => logout
+        onLogout();
       }
     };
     fetchUser();
@@ -37,18 +40,20 @@ export default function Dashboard({ onLogout }) {
       {/* Sidebar */}
       <aside
         style={{
-          width: "220px",
+          width: sidebarOpen ? 220 : 0,
           backgroundColor: "#2c3e50",
           color: "#fff",
           display: "flex",
           flexDirection: "column",
-          padding: "20px",
+          padding: sidebarOpen ? "20px" : "0",
+          transition: "width 0.3s ease",
+          overflow: "hidden",
         }}
       >
-        <h2 style={{ marginBottom: "40px" }}>🚀 SecureBoard</h2>
+        <h2 style={{ marginBottom: "40px", display: sidebarOpen ? "block" : "none" }}>🚀 SecureBoard</h2>
 
         {/* Profil utilisateur */}
-        {user && (
+        {user && sidebarOpen && (
           <div
             style={{
               backgroundColor: "#34495e",
@@ -76,9 +81,7 @@ export default function Dashboard({ onLogout }) {
               {user.name ? user.name.charAt(0).toUpperCase() : "?"}
             </div>
             <p style={{ margin: "5px 0", fontWeight: "bold" }}>{user.name}</p>
-            <p style={{ margin: "0", fontSize: "12px", color: "#ccc" }}>
-              {user.email}
-            </p>
+            <p style={{ margin: 0, fontSize: "12px", color: "#ccc" }}>{user.email}</p>
           </div>
         )}
 
@@ -110,29 +113,37 @@ export default function Dashboard({ onLogout }) {
 
         {/* Déconnexion */}
         <div style={{ marginTop: "auto" }}>
-          <button
-            onClick={onLogout}
-            style={{
-              ...sidebarButtonStyle(false),
-              backgroundColor: "#e74c3c",
-              marginTop: "20px",
-            }}
-          >
-            Déconnexion
-          </button>
+          <Logout onLogout={onLogout} />
         </div>
+
+        {/* Toggle sidebar */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          style={{
+            marginTop: 10,
+            padding: 8,
+            borderRadius: 5,
+            border: "none",
+            backgroundColor: "#2575fc",
+            color: "#fff",
+            cursor: "pointer",
+          }}
+        >
+          {sidebarOpen ? "◀" : "▶"}
+        </button>
       </aside>
 
-      {/* Main content - prend toute la largeur restante */}
+      {/* Main content */}
       <main
         style={{
-          flex: 2, // ← prend tout l'espace restant
-          padding: "40px",
+          flex: 1,
+          padding: "20px",
           background: "linear-gradient(135deg, #4e54c8, #8f94fb)",
           color: "#fff",
           display: "flex",
           flexDirection: "column",
-          width: "940px", // ← important pour s'étendre
+          minWidth: 0, // 
+          
         }}
       >
         {activePage === "home" && <h1>Bienvenue {user ? user.name : ""} 👋</h1>}
@@ -147,7 +158,6 @@ export default function Dashboard({ onLogout }) {
         {activePage === "projects" && (
           <div style={{ flex: 1, width: "100%" }}>
             <h1>📊 Gestion des projets</h1>
-            <p>Liste et gestion des projets ici.</p>
             <Projects />
           </div>
         )}
