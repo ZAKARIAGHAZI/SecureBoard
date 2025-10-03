@@ -30,14 +30,16 @@ export default function Users() {
 
   const handleAddOrUpdateUser = async (e) => {
     e.preventDefault();
+    setErrors({});
+    setGlobalError("");
     try {
-      const payload = { name, email, role };
+      let payload = { name, email, role };
       if (!editUser || password) {
         payload.password = password;
       }
-
+      let res;
       if (editUser) {
-        const res = await api.put(`/user/${editUser.id}`, payload);
+        res = await api.put(`/user/${editUser.id}`, payload);
         setUsers(users.map((u) => (u.id === editUser.id ? res.data : u)));
       } else {
         const res = await api.post("/user", payload);
@@ -45,20 +47,23 @@ export default function Users() {
         setUsers([...users, res.data]);
       }
 
-      // Reset form
+      // Reset
       setShowForm(false);
       setEditUser(null);
       setName("");
       setEmail("");
       setRole("");
     } catch (err) {
-      console.error(
-        "Erreur ajout/modification user",
-        err.response?.data || err
-      );
+      if (err.response && err.response.data && err.response.data.errors) {
+        setErrors(err.response.data.errors);
+      } else if (err.response && err.response.data && err.response.data.message) {
+        setGlobalError(err.response.data.message);
+      } else {
+        setGlobalError("Erreur inattendue lors de l'ajout ou modification.");
+      }
+      console.error("Erreur ajout/modification user", err);
     }
   };
-
 
   const handleDeleteUser = async (id) => {
     if (!window.confirm("⚠️ Voulez-vous vraiment supprimer cet utilisateur ?"))
@@ -85,6 +90,15 @@ export default function Users() {
       u.name.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Fonction pour récupérer le rôle correctement
+  const getUserRole = (u) => {
+    if (u.role && typeof u.role === "object" && u.role.name) return u.role.name;
+    if (u.roles && Array.isArray(u.roles) && u.roles.length > 0)
+      return u.roles.map((r) => r.name).join(", ");
+    if (u.role && typeof u.role === "string") return u.role;
+    return "Aucun rôle";
+  };
 
   return (
     <div style={containerStyle}>
@@ -115,6 +129,9 @@ export default function Users() {
                   : "➕ Ajouter un utilisateur"}
               </h3>
               <form onSubmit={handleAddOrUpdateUser} style={formStyle}>
+                {globalError && (
+                  <div style={{ color: "#e53935", marginBottom: 10, fontWeight: "bold" }}>{globalError}</div>
+                )}
                 <label>Nom :</label>
                 <input
                   type="text"
@@ -132,6 +149,7 @@ export default function Users() {
                   required
                   style={inputStyle}
                 />
+                {errors.password && <div style={{ color: "#e53935", fontSize: 13 }}>{errors.password[0]}</div>}
 
                 <label>Rôle :</label>
                 <select
@@ -145,6 +163,7 @@ export default function Users() {
                   <option value="manager">Manager</option>
                   <option value="user">Utilisateur</option>
                 </select>
+                {errors.role && <div style={{ color: "#e53935", fontSize: 13 }}>{errors.role[0]}</div>}
 
                 <div style={{ marginTop: 15, textAlign: "right" }}>
                   <button
@@ -152,6 +171,8 @@ export default function Users() {
                     onClick={() => {
                       setShowForm(false);
                       setEditUser(null);
+                      setErrors({});
+                      setGlobalError("");
                     }}
                     style={cancelButton}
                   >

@@ -15,20 +15,27 @@ class UserController extends Controller
 
         if ($user->hasRole('admin')) {
             // Admin sees all users
-            return response()->json(User::all(), 200);
+            $users = User::with('roles')->get();
         } elseif ($user->hasRole('manager')) {
-            // Manager sees users in projects they manage
-            $projectIds = $user->managedProjects()->pluck('id'); // assumes managedProjects() relation exists
-            $users = User::whereHas('projects', function ($q) use ($projectIds) {
-                $q->whereIn('projects.id', $projectIds);
-            })->get();
-
-            return response()->json($users, 200);
+            // Manager sees users who are in projects they created/own
+            $users = User::with('roles')
+                ->whereHas('projects', function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })->get();
         } else {
             // Normal user sees only themselves
-            return response()->json([$user], 200);
+            $users = User::with('roles')->where('id', $user->id)->get();
         }
+
+        // Add a simplified role for frontend
+        $users->transform(function ($u) {
+            $u->role = $u->roles->pluck('name')->first() ?? null;
+            return $u;
+        });
+
+        return response()->json($users, 200);
     }
+    
 
     /** POST /users : créer un utilisateur */
     public function store(Request $request)
@@ -46,8 +53,12 @@ class UserController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        // Assign role via Laratrust
-        $user->attachRole($validated['role']);
+        // Assigner le rôle
+        $user->syncRoles([$validated['role']]);
+
+        // Charger les rôles et ajouter "role"
+        $user->load('roles');
+        $user->role = $user->roles->pluck('name')->first() ?? null;
 
         return response()->json($user, 201);
     }
@@ -70,9 +81,11 @@ class UserController extends Controller
         $user->save();
 
         if (isset($validated['role'])) {
-            $user->detachRoles($user->roles); // remove old roles
-            $user->attachRole($validated['role']);
+            $user->syncRoles([$validated['role']]);
         }
+
+        $user->load('roles');
+        $user->role = $user->roles->pluck('name')->first() ?? null;
 
         return response()->json($user, 200);
     }

@@ -3,12 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use App\Events\TaskCreated;
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
 {
     public function index()
-    {
+    { {
+            $tasks = Task::with(['project', 'user'])->get();
+            return response()->json($tasks);
+        }
         $user = auth()->user();
 
         if ($user->hasRole('admin')) {
@@ -26,6 +30,7 @@ class TaskController extends Controller
         return Task::where('user_id', $user->id)->get();
     }
 
+
     public function store(Request $request)
     {
         $this->authorize('create', Task::class);
@@ -39,6 +44,8 @@ class TaskController extends Controller
         ]);
 
         $task = Task::create($data);
+
+        event(new TaskCreated($task));
 
         return response()->json($task, 201);
     }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+
 import Users from "./Users";
 import api from "../api"; // ton axios configuré avec baseURL
 import Projects from "./Projects";
@@ -6,7 +7,9 @@ import Projects from "./Projects";
 import Logout from "../components/Logout";
 import api from "../api";
 import Tasks from "./Tasks";
-
+import DashboardHome from "./DashboardHome";
+import Logout from "../components/Logout";
+import "./Dashboard.css";
 
 export default function Dashboard({ onLogout }) {
   const [activePage, setActivePage] = useState("home"); // home, users, projects
@@ -30,16 +33,90 @@ export default function Dashboard({ onLogout }) {
     fetchUser();
   }, [onLogout]);
 
+  // Normalisation pour affichage
+  const getUserName = (u) => u?.name || "Utilisateur";
+  const getUserEmail = (u) => u?.email || "Aucun email";
+  const getUserRole = (u) => u?.role || null;
+
+  const renderUserProfile = () => {
+    if (!user || !sidebarOpen) return null;
+
+    return (
+      <div
+        style={{
+          backgroundColor: "#34495e",
+          padding: "18px 12px 14px 12px",
+          borderRadius: "10px",
+          marginBottom: "24px",
+          textAlign: "center",
+          boxShadow: "0 2px 8px rgba(52,73,94,0.08)",
+        }}
+      >
+        <div
+          style={{
+            width: "64px",
+            height: "64px",
+            borderRadius: "50%",
+            background: "linear-gradient(135deg,#4e54c8,#8f94fb)",
+            margin: "0 auto 12px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            fontSize: "28px",
+            fontWeight: 700,
+            color: "#fff",
+            letterSpacing: 1,
+            boxShadow: "0 2px 8px rgba(78,84,200,0.10)",
+          }}
+        >
+          {getUserName(user)
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2)}
+        </div>
+        <p
+          style={{
+            margin: "5px 0 2px 0",
+            fontWeight: "bold",
+            fontSize: 16,
+            color: "#fff",
+          }}
+        >
+          {getUserName(user)}
+        </p>
+        <p
+          style={{
+            margin: 0,
+            fontSize: "12px",
+            color: "#ccc",
+            wordBreak: "break-all",
+          }}
+        >
+          {getUserEmail(user)}
+        </p>
+        {getUserRole(user) && (
+          <div
+            style={{
+              marginTop: 6,
+              fontSize: 12,
+              color: "#facc15",
+              fontWeight: 600,
+            }}
+          >
+            Rôle : {getUserRole(user)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
+    <div className="dashboard-container" style={{ fontFamily: "Arial, sans-serif" }}>
       {/* Sidebar */}
       <aside
+        className={`sidebar ${sidebarOpen ? "open" : "closed"}`}
         style={{
           width: "220px",
           backgroundColor: "#2c3e50",
@@ -85,7 +162,6 @@ export default function Dashboard({ onLogout }) {
             </p>
           </div>
         )}
-
         {/* Navigation */}
         <button
           onClick={() => setActivePage("home")}
@@ -129,6 +205,7 @@ export default function Dashboard({ onLogout }) {
 
       {/* Main content - prend toute la largeur restante */}
       <main
+        className="dashboard-main"
         style={{
           flex: 2, // ← prend tout l'espace restant
           padding: "40px",
@@ -139,15 +216,13 @@ export default function Dashboard({ onLogout }) {
           width: "940px", // ← important pour s'étendre
         }}
       >
-        {activePage === "home" && <h1>Bienvenue {user ? user.name : ""} 👋</h1>}
-
+        {activePage === "home" && <DashboardHome />}
         {activePage === "users" && (
           <div style={{ flex: 1, width: "100%" }}>
-            <h1>👥 Gestion des utilisateurs</h1>
+            <h1> Gestion des utilisateurs</h1>
             <Users />
           </div>
         )}
-
         {activePage === "projects" && (
           <div style={{ flex: 1, width: "100%" }}>
             <h1>📊 Gestion des projets</h1>
@@ -155,12 +230,10 @@ export default function Dashboard({ onLogout }) {
             <Projects />
           </div>
         )}
-
-        {activePage === "tasks" && (
+        {activePage === "tasks" && user && (
           <div style={{ flex: 1, width: "100%" }}>
             <h1>📝 Gestion des tâches</h1>
-            <p></p>
-            <Tasks />
+            <Tasks currentUser={user} />
           </div>
         )}
       </main>
@@ -168,7 +241,6 @@ export default function Dashboard({ onLogout }) {
   );
 }
 
-// Style pour les boutons du sidebar
 const sidebarButtonStyle = (active) => ({
   backgroundColor: active ? "#34495e" : "transparent",
   border: "none",
