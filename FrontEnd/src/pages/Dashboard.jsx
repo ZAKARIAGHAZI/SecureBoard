@@ -1,90 +1,131 @@
 import React, { useState, useEffect } from "react";
+
 import Users from "./Users";
 import Projects from "./Projects";
-import Logout from "../components/Logout";
-import api from "../api";
 import Tasks from "./Tasks";
-
+import DashboardHome from "./DashboardHome";
+import Logout from "../components/Logout";
+import "./Dashboard.css";
 
 export default function Dashboard({ onLogout }) {
   const [activePage, setActivePage] = useState("home");
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Récupération utilisateur connecté
+  // Récupération utilisateur connecté depuis localStorage
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-
-        const res = await api.get("/user", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(res.data);
-      } catch (err) {
-        console.error("❌ Erreur récupération user:", err);
-        onLogout();
-      }
-    };
-    fetchUser();
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    } else {
+      onLogout();
+    }
   }, [onLogout]);
 
+  // Normalisation pour affichage
+  const getUserName = (u) => u?.name || "Utilisateur";
+  const getUserEmail = (u) => u?.email || "Aucun email";
+  const getUserRole = (u) => u?.role || null;
+
+  const renderUserProfile = () => {
+    if (!user || !sidebarOpen) return null;
+
+    return (
+      <div
+        style={{
+          backgroundColor: "#34495e",
+          padding: "18px 12px 14px 12px",
+          borderRadius: "10px",
+          marginBottom: "24px",
+          textAlign: "center",
+          boxShadow: "0 2px 8px rgba(52,73,94,0.08)",
+        }}
+      >
+        <div
+          style={{
+            width: "64px",
+            height: "64px",
+            borderRadius: "50%",
+            background: "linear-gradient(135deg,#4e54c8,#8f94fb)",
+            margin: "0 auto 12px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            fontSize: "28px",
+            fontWeight: 700,
+            color: "#fff",
+            letterSpacing: 1,
+            boxShadow: "0 2px 8px rgba(78,84,200,0.10)",
+          }}
+        >
+          {getUserName(user)
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2)}
+        </div>
+        <p
+          style={{
+            margin: "5px 0 2px 0",
+            fontWeight: "bold",
+            fontSize: 16,
+            color: "#fff",
+          }}
+        >
+          {getUserName(user)}
+        </p>
+        <p
+          style={{
+            margin: 0,
+            fontSize: "12px",
+            color: "#ccc",
+            wordBreak: "break-all",
+          }}
+        >
+          {getUserEmail(user)}
+        </p>
+        {getUserRole(user) && (
+          <div
+            style={{
+              marginTop: 6,
+              fontSize: 12,
+              color: "#facc15",
+              fontWeight: 600,
+            }}
+          >
+            Rôle : {getUserRole(user)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
+    <div className="dashboard-container" style={{ fontFamily: "Arial, sans-serif" }}>
       {/* Sidebar */}
       <aside
+        className={`sidebar ${sidebarOpen ? "open" : "closed"}`}
         style={{
-          width: sidebarOpen ? 220 : 0,
           backgroundColor: "#2c3e50",
           color: "#fff",
           display: "flex",
           flexDirection: "column",
           padding: sidebarOpen ? "20px" : "0",
-          transition: "width 0.3s ease",
           overflow: "hidden",
         }}
       >
-        <h2 style={{ marginBottom: "40px", display: sidebarOpen ? "block" : "none" }}>🚀 SecureBoard</h2>
+        <h2
+          style={{
+            marginBottom: "40px",
+            display: sidebarOpen ? "block" : "none",
+          }}
+        >
+          SecureBoard
+        </h2>
 
         {/* Profil utilisateur */}
-        {user && sidebarOpen && (
-          <div
-            style={{
-              backgroundColor: "#34495e",
-              padding: "15px",
-              borderRadius: "8px",
-              marginBottom: "20px",
-              textAlign: "center",
-            }}
-          >
-            <div
-              style={{
-                width: "60px",
-                height: "60px",
-                borderRadius: "50%",
-                backgroundColor: "#8f94fb",
-                margin: "0 auto 10px",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                fontSize: "20px",
-                fontWeight: "bold",
-                color: "#fff",
-              }}
-            >
-              {user.name ? user.name.charAt(0).toUpperCase() : "?"}
-            </div>
-            <p style={{ margin: "5px 0", fontWeight: "bold" }}>{user.name}</p>
-            <p style={{ margin: 0, fontSize: "12px", color: "#ccc" }}>{user.email}</p>
-          </div>
-        )}
+        {renderUserProfile()}
 
         {/* Navigation */}
         <button
@@ -116,58 +157,34 @@ export default function Dashboard({ onLogout }) {
         <div style={{ marginTop: "auto" }}>
           <Logout onLogout={onLogout} />
         </div>
-
-        {/* Toggle sidebar */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          style={{
-            marginTop: 10,
-            padding: 8,
-            borderRadius: 5,
-            border: "none",
-            backgroundColor: "#2575fc",
-            color: "#fff",
-            cursor: "pointer",
-          }}
-        >
-          {sidebarOpen ? "◀" : "▶"}
-        </button>
       </aside>
 
       {/* Main content */}
       <main
+        className="dashboard-main"
         style={{
-          flex: 1,
-          padding: "20px",
           background: "linear-gradient(135deg, #4e54c8, #8f94fb)",
           color: "#fff",
-          display: "flex",
-          flexDirection: "column",
-          minWidth: 0, // 
-          
+          minWidth: 0,
         }}
       >
-        {activePage === "home" && <h1>Bienvenue {user ? user.name : ""} 👋</h1>}
-
+        {activePage === "home" && <DashboardHome />}
         {activePage === "users" && (
           <div style={{ flex: 1, width: "100%" }}>
-            <h1>👥 Gestion des utilisateurs</h1>
+            <h1> Gestion des utilisateurs</h1>
             <Users />
           </div>
         )}
-
         {activePage === "projects" && (
           <div style={{ flex: 1, width: "100%" }}>
-            <h1>📊 Gestion des projets</h1>
+            <h1> Gestion des projets</h1>
             <Projects />
           </div>
         )}
-
-        {activePage === "tasks" && (
+        {activePage === "tasks" && user && (
           <div style={{ flex: 1, width: "100%" }}>
             <h1>📝 Gestion des tâches</h1>
-            <p></p>
-            <Tasks />
+            <Tasks currentUser={user} />
           </div>
         )}
       </main>
@@ -175,7 +192,6 @@ export default function Dashboard({ onLogout }) {
   );
 }
 
-// Style pour les boutons du sidebar
 const sidebarButtonStyle = (active) => ({
   backgroundColor: active ? "#34495e" : "transparent",
   border: "none",

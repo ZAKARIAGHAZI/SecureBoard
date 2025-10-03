@@ -1,0 +1,89 @@
+/* Container responsive pour le dashboard */
+.dashboard-container {
+  display: flex;
+  width: 100vw;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.dashboard-main {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-main {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    flex-direction: column;
+  }
+  .dashboard-main {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-main {
+    padding: 5px;
+  }
+}
+/* Sidebar base */
+.sidebar {
+  transition: all 0.3s ease;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* Desktop (par défaut) */
+.sidebar.open {
+  width: 220px;
+}
+.sidebar.closed {
+  width: 0;
+}
+
+/* Tablette */
+@media (max-width: 1024px) {
+  .sidebar.open {
+    width: 180px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 1000;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.4);
+  }
+
+  .sidebar.open {
+    width: 70%;
+  }
+
+  .sidebar.closed {
+    width: 0;
+  }
+
+  main {
+    flex: 1;
+    padding: 15px !important;
+  }
+}
+
+/* Très petit mobile */
+@media (max-width: 480px) {
+  .sidebar.open {
+    width: 100%;
+  }
+}

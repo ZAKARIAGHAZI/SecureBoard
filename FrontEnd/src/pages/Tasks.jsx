@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
 import api from "../api";
 
-export default function Tasks() {
+export default function Tasks({ currentUser }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
   const [errors, setErrors] = useState({});
+  const [editingTaskId, setEditingTaskId] = useState(null);
+
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
@@ -56,9 +58,7 @@ export default function Tasks() {
       });
       setUsers(res.data);
 
-      // if normal user, auto assign self
-      const role = localStorage.getItem("role");
-      if (role === "user" && res.data.length === 1) {
+      if (currentUser?.role === "user" && res.data.length === 1) {
         setNewTask((prev) => ({ ...prev, user_id: res.data[0].id }));
       }
     } catch (err) {
@@ -72,9 +72,7 @@ export default function Tasks() {
       await api.put(
         `/tasks/${taskId}`,
         { status: newStatus },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setTasks((prev) =>
         prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
@@ -84,7 +82,7 @@ export default function Tasks() {
     }
   };
 
-  const handleCreateTask = async (e) => {
+  const handleCreateOrUpdateTask = async (e) => {
     e.preventDefault();
     setErrors({});
     try {
@@ -94,28 +92,64 @@ export default function Tasks() {
         project_id: Number(newTask.project_id),
         user_id: Number(newTask.user_id),
       };
-      const res = await api.post("/tasks", payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setTasks((prev) => [...prev, res.data]);
+
+      let res;
+      if (editingTaskId) {
+        // Update task
+        res = await api.put(`/tasks/${editingTaskId}`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setTasks((prev) =>
+          prev.map((t) => (t.id === editingTaskId ? res.data : t))
+        );
+      } else {
+        // Create new task
+        res = await api.post("/tasks", payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setTasks((prev) => [...prev, res.data]);
+      }
+
       setShowForm(false);
+      setEditingTaskId(null);
       setNewTask({
         title: "",
         description: "",
         project_id: "",
         status: "pending",
-        user_id:
-          localStorage.getItem("role") === "user"
-            ? Number(localStorage.getItem("user_id"))
-            : "",
+        user_id: currentUser?.role === "user" ? currentUser.id : "",
       });
     } catch (err) {
       if (err.response && err.response.status === 422) {
         setErrors(err.response.data.errors || {});
       } else {
-        console.error("Erreur création task:", err);
+        console.error("Erreur création/mise à jour task:", err);
       }
     }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    try {
+      const token = localStorage.getItem("token");
+      await api.delete(`/tasks/${taskId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    } catch (err) {
+      console.error("Erreur suppression task:", err);
+    }
+  };
+
+  const handleEditTask = (task) => {
+    setNewTask({
+      title: task.title,
+      description: task.description || "",
+      project_id: task.project_id,
+      status: task.status,
+      user_id: task.user_id,
+    });
+    setEditingTaskId(task.id);
+    setShowForm(true);
   };
 
   const getStatusStyle = (status) => {
@@ -138,9 +172,14 @@ export default function Tasks() {
     marginBottom: "14px",
   };
 
+  const filteredTasks =
+    currentUser?.role === "user"
+      ? tasks.filter((task) => task.user_id === currentUser.id)
+      : tasks;
+
   return (
     <div style={{ padding: "15px" }}>
-      {/* HEADER */}
+      {/* Header */}
       <div
         style={{
           display: "flex",
@@ -154,27 +193,24 @@ export default function Tasks() {
           📋 Liste et gestion des tâches
         </h3>
         <button
-          onClick={() => setShowForm(true)}
-          style={{
-            background: "#4e54c8",
-            color: "#fff",
-            border: "none",
-            padding: "10px 20px",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontWeight: "bold",
-            marginTop: "10px",
-            flex: "0 0 auto",
-            transition: "background 0.2s",
+          onClick={() => {
+            setShowForm(true);
+            setEditingTaskId(null);
+            setNewTask({
+              title: "",
+              description: "",
+              project_id: "",
+              status: "pending",
+              user_id: currentUser?.role === "user" ? currentUser.id : "",
+            });
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#3f44a8")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "#4e54c8")}
+          style={buttonStyle}
         >
           + Add Task
         </button>
       </div>
 
-      {/* TASK CARDS */}
+      {/* Cards */}
       <div
         style={{
           display: "flex",
@@ -185,35 +221,11 @@ export default function Tasks() {
       >
         {loading ? (
           <p style={{ color: "#fff" }}>Chargement des tâches...</p>
-        ) : tasks.length === 0 ? (
+        ) : filteredTasks.length === 0 ? (
           <p style={{ color: "#fff" }}>Aucune tâche trouvée.</p>
         ) : (
-          tasks.map((task) => (
-            <div
-              key={task.id}
-              style={{
-                backgroundColor: "#fff",
-                color: "#111",
-                padding: "20px",
-                borderRadius: "15px",
-                minHeight: "180px",
-                boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                transition: "transform 0.2s, box-shadow 0.2s",
-                width: "100%",
-                maxWidth: "280px",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "scale(1.05)";
-                e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.3)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "scale(1)";
-                e.currentTarget.style.boxShadow = "0 4px 15px rgba(0,0,0,0.2)";
-              }}
-            >
+          filteredTasks.map((task) => (
+            <div key={task.id} style={cardStyle}>
               <h3 style={{ margin: "0 0 8px 0", color: "#222" }}>
                 {task.title}
               </h3>
@@ -221,82 +233,70 @@ export default function Tasks() {
                 {task.description || "Pas de description"}
               </p>
               <p
-                style={{ fontSize: "12px", color: "#555", marginBottom: "8px" }}
+                style={{
+                  fontSize: "12px",
+                  color: "#555",
+                  marginBottom: "4px",
+                }}
               >
                 Projet: {task.project?.name || "N/A"}
               </p>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "#555",
+                  marginBottom: "8px",
+                }}
+              >
+                Utilisateur: {task.user?.name || "N/A"}
+              </p>
+              <select
+                value={task.status || "pending"}
+                onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                style={{
+                  ...statusSelectStyle,
+                  ...getStatusStyle(task.status),
+                }}
+              >
+                <option value="pending">pending</option>
+                <option value="in_progress">in_progress</option>
+                <option value="completed">completed</option>
+              </select>
+
+              {/* Modify + Delete buttons */}
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "5px",
+                  marginTop: "10px",
                 }}
               >
-                <select
-                  value={task.status || "pending"}
-                  onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                <button
                   style={{
-                    padding: "6px 12px",
-                    borderRadius: "12px",
-                    border: "1px solid #ccc",
-                    fontSize: "12px",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    ...getStatusStyle(task.status),
+                    ...buttonStyle,
+                    background: "#facc15",
+                    color: "#000",
                   }}
+                  onClick={() => handleEditTask(task)}
                 >
-                  <option value="pending">pending</option>
-                  <option value="in_progress">in_progress</option>
-                  <option value="completed">completed</option>
-                </select>
-                {task.assigned_by_role &&
-                  ["manager", "admin"].includes(task.assigned_by_role) && (
-                    <span
-                      style={{
-                        fontSize: "12px",
-                        color: "#555",
-                        flex: "1 1 100%",
-                      }}
-                    >
-                      Assigned by: {task.assigned_by_name}
-                    </span>
-                  )}
+                  ✏️ Modify
+                </button>
+                <button
+                  style={{ ...buttonStyle, background: "#dc2626" }}
+                  onClick={() => handleDeleteTask(task.id)}
+                >
+                  🗑️ Delete
+                </button>
               </div>
             </div>
           ))
         )}
       </div>
 
-      {/* MODAL */}
+      {/* Modal */}
       {showForm && (
-        <div
-          style={{
-            background: "rgba(0,0,0,0.7)",
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: "15px",
-            zIndex: 1000,
-          }}
-        >
-          <form
-            onSubmit={handleCreateTask}
-            style={{
-              background: "#fff",
-              padding: "20px",
-              borderRadius: "12px",
-              width: "100%",
-              maxWidth: "400px",
-              boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
-            }}
-          >
+        <div style={modalOverlayStyle}>
+          <form onSubmit={handleCreateOrUpdateTask} style={modalStyle}>
             <h2
               style={{
                 textAlign: "center",
@@ -305,7 +305,7 @@ export default function Tasks() {
                 fontWeight: "bold",
               }}
             >
-              ➕ Add New Task
+              {editingTaskId ? "✏️ Edit Task" : "➕ Add New Task"}
             </h2>
             <input
               style={inputStyle}
@@ -322,15 +322,20 @@ export default function Tasks() {
               placeholder="Description"
               value={newTask.description}
               onChange={(e) =>
-                setNewTask((prev) => ({ ...prev, description: e.target.value }))
+                setNewTask((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
               }
             />
-
             <select
               style={inputStyle}
               value={newTask.project_id}
               onChange={(e) =>
-                setNewTask((prev) => ({ ...prev, project_id: e.target.value }))
+                setNewTask((prev) => ({
+                  ...prev,
+                  project_id: e.target.value,
+                }))
               }
               required
             >
@@ -341,9 +346,7 @@ export default function Tasks() {
                 </option>
               ))}
             </select>
-
-            {/* Role-based User Selection */}
-            {localStorage.getItem("role") !== "user" && (
+            {currentUser?.role !== "user" && (
               <select
                 style={inputStyle}
                 value={newTask.user_id}
@@ -360,7 +363,6 @@ export default function Tasks() {
                 ))}
               </select>
             )}
-
             <select
               style={inputStyle}
               value={newTask.status}
@@ -372,7 +374,6 @@ export default function Tasks() {
               <option value="in_progress">in_progress</option>
               <option value="completed">completed</option>
             </select>
-
             <div
               style={{
                 display: "flex",
@@ -383,29 +384,15 @@ export default function Tasks() {
             >
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background: "#e0e0e0",
-                  cursor: "pointer",
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingTaskId(null);
                 }}
+                style={cancelBtnStyle}
               >
                 Cancel
               </button>
-              <button
-                type="submit"
-                style={{
-                  padding: "8px 14px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background: "#4e54c8",
-                  color: "#fff",
-                  fontWeight: "bold",
-                  cursor: "pointer",
-                }}
-              >
+              <button type="submit" style={saveBtnStyle}>
                 Save
               </button>
             </div>
@@ -415,3 +402,74 @@ export default function Tasks() {
     </div>
   );
 }
+
+// Styles
+const cardStyle = {
+  backgroundColor: "#fff",
+  color: "#111",
+  padding: "20px",
+  borderRadius: "15px",
+  minHeight: "200px",
+  boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "space-between",
+  transition: "transform 0.2s, box-shadow 0.2s",
+  width: "100%",
+  maxWidth: "280px",
+};
+const buttonStyle = {
+  background: "#4e54c8",
+  color: "#fff",
+  border: "none",
+  padding: "10px 20px",
+  borderRadius: "8px",
+  cursor: "pointer",
+  fontWeight: "bold",
+  marginTop: "10px",
+};
+const statusSelectStyle = {
+  padding: "6px 12px",
+  borderRadius: "12px",
+  border: "1px solid #ccc",
+  fontSize: "12px",
+  fontWeight: "bold",
+  cursor: "pointer",
+};
+const modalOverlayStyle = {
+  background: "rgba(0,0,0,0.7)",
+  position: "fixed",
+  top: 0,
+  left: 0,
+  width: "100%",
+  height: "100%",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  padding: "15px",
+  zIndex: 1000,
+};
+const modalStyle = {
+  background: "#fff",
+  padding: "20px",
+  borderRadius: "12px",
+  width: "100%",
+  maxWidth: "400px",
+  boxShadow: "0 6px 20px rgba(0,0,0,0.3)",
+};
+const cancelBtnStyle = {
+  padding: "8px 14px",
+  borderRadius: "6px",
+  border: "none",
+  background: "#e0e0e0",
+  cursor: "pointer",
+};
+const saveBtnStyle = {
+  padding: "8px 14px",
+  borderRadius: "6px",
+  border: "none",
+  background: "#4e54c8",
+  color: "#fff",
+  fontWeight: "bold",
+  cursor: "pointer",
+};
