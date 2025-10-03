@@ -2,7 +2,6 @@ import { useState } from "react";
 import api from "../api.jsx"; // notre axios centralisé
 import BackgroundCanvas from "../components/BackgroundCanvas.jsx";
 
-
 export default function Login({ onLogin, switchToRegister }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
